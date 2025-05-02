@@ -1,4 +1,6 @@
 import { CoinCheckClient } from "../../../infrastructure/api/CoinCheckClient";
+import { SystemClock } from "../../../infrastructure/datetime/SystemClock";
+import { ExcelWorksheetAdapter } from "../../../infrastructure/excel/ExcelWorksheetAdapter";
 import { TradingStrategy } from "./TradingStrategy";
 
 /**
@@ -11,6 +13,9 @@ export class MovingAverageStrategy implements TradingStrategy {
   // 移動平均期間の設定（短期5期間、長期25期間）
   private readonly shortTerm = 5;
   private readonly longTerm = 25;
+
+  // 購入量
+  private readonly AMOUNT = 0.01;
 
   constructor(private client: CoinCheckClient) { }
 
@@ -33,23 +38,41 @@ export class MovingAverageStrategy implements TradingStrategy {
       if (shortMA > longMA) {
         await this.client.createOrder({
           rate: currentPrice,
-          amount: 0.01,
+          amount: this.AMOUNT,
           order_type: 'buy',
           pair: 'eth_jpy'
         });
-        console.log(`MovingAverageStrategyクラス → 現在の価格: ${currentPrice}、短期MA：${shortMA}、長期MA：${longMA} - 購入します`);
-        console.log(`MovingAverageStrategyクラス → 配列：${this.prices}`);
+        // エクセルワークシートの初期化
+        const excelAdapter = new ExcelWorksheetAdapter();
+        await excelAdapter.initialize("MA-BUY");
+        // 最終行を取得
+        const lastRowNumber = excelAdapter.getLastRowNumber(2, 2); // 2列目の最終行を取得
+        // 購入履歴に追加
+        await excelAdapter.appendCellValue("B", lastRowNumber + 1, SystemClock.getTimeStamp());
+        await excelAdapter.appendCellValue("C", lastRowNumber + 1, this.AMOUNT);
+        await excelAdapter.appendCellValue("D", lastRowNumber + 1, currentPrice);
+        await excelAdapter.appendCellValue("E", lastRowNumber + 1, shortMA);
+        await excelAdapter.appendCellValue("F", lastRowNumber + 1, longMA);
       }
       // デッドクロス（短期MAが長期MAを下抜き）
       else if (shortMA < longMA) {
         await this.client.createOrder({
           rate: currentPrice,
-          amount: 0.01,
+          amount: this.AMOUNT,
           order_type: 'sell',
           pair: 'eth_jpy'
         });
-        console.log(`MovingAverageStrategyクラス → 現在の価格: ${currentPrice}、短期MA：${shortMA}、長期MA：${longMA} - 売却します`);
-        console.log(`MovingAverageStrategyクラス → 配列：${this.prices}`);
+        // エクセルワークシートの初期化
+        const excelAdapter = new ExcelWorksheetAdapter();
+        await excelAdapter.initialize("MA-SELL");
+        // 最終行を取得
+        const lastRowNumber = excelAdapter.getLastRowNumber(2, 2); // 2列目の最終行を取得
+        // 購入履歴に追加
+        await excelAdapter.appendCellValue("B", lastRowNumber + 1, SystemClock.getTimeStamp());
+        await excelAdapter.appendCellValue("C", lastRowNumber + 1, this.AMOUNT);
+        await excelAdapter.appendCellValue("D", lastRowNumber + 1, currentPrice);
+        await excelAdapter.appendCellValue("E", lastRowNumber + 1, shortMA);
+        await excelAdapter.appendCellValue("F", lastRowNumber + 1, longMA);
       } else {
         // 移動平均線が交差していない場合は何もしない
         console.log(`MovingAverageStrategyクラス → 現在の価格: ${currentPrice}、短期MA：${shortMA}、長期MA：${longMA} - 交差なし`);

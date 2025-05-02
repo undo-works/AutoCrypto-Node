@@ -1,5 +1,6 @@
 import { BreakoutStrategy } from "../domain/services/coincheck/BreakoutStrategyProcessor";
 import { MovingAverageStrategy } from "../domain/services/coincheck/MovingAverageStrategyProcessor";
+import { PriceRecordProcessor } from "../domain/services/coincheck/PriceRecordProcessor";
 import { RSIStrategy } from "../domain/services/coincheck/RSIStrategyProcessor";
 import { TradingStrategy } from "../domain/services/coincheck/TradingStrategy";
 import { CoinCheckClient } from "../infrastructure/api/CoinCheckClient";
@@ -15,10 +16,15 @@ export class AutoTradeUseCase {
 
   private ssmClient: SsmParameter;
 
+  private priceRecordProcessor: PriceRecordProcessor | null = null;
+
   constructor() {
     this.ssmClient = new SsmParameter();
   }
 
+  /**
+   * 戦略を初期化するメソッド
+   */
   async initializeStrategies(): Promise<void> {
     this.coincheckClient = new CoinCheckClient(
       await this.ssmClient.getSsmParameter("/COINCHECK/ACCESS_KEY"),
@@ -30,11 +36,16 @@ export class AutoTradeUseCase {
       new MovingAverageStrategy(this.coincheckClient),
       new RSIStrategy(this.coincheckClient)
     );
+    this.priceRecordProcessor = new PriceRecordProcessor(this.coincheckClient);
   }
 
+  /**
+   * 戦略を実行するメソッド
+   */
   async executeStrategies(): Promise<void> {
-    const price = await this.coincheckClient?.getEthPrice();
-    console.log("現在のETH価格:", price);
+    // 価格履歴をエクセルに記録
+    await this.priceRecordProcessor?.execute();
+
     // 各戦略を実行
     for (const strategy of this.strategies) {
       try {
