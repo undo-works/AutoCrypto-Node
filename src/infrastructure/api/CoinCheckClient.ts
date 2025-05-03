@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import axios, { AxiosRequestConfig, Method } from 'axios';
 import { EthPriceEntity } from './types/EthPriceEntity';
+import { BalanceEntity } from './types/BalanceEntity';
 
 type OrderType = 'buy' | 'sell';
 type OrderParams = {
@@ -107,5 +108,15 @@ export class CoinCheckClient {
   // 未約定注文一覧
   async getOpenOrders(): Promise<any> {
     return this.request('GET', '/exchange/orders/opens');
+  }
+
+  /**
+   * 残高取得
+   * @returns 残高情報
+   */
+  async getSumBalances(): Promise<number> {
+    const balance = await this.request<BalanceEntity>('GET', '/accounts/balance');
+    // 日本円 + ETHの残高×評価額を計算
+    return Number(balance.jpy) + (Number(balance.eth) * await this.getEthPrice());
   }
 }
