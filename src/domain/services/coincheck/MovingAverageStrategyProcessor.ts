@@ -12,6 +12,9 @@ export class MovingAverageStrategy implements TradingStrategy {
   private prices: number[] = [];
   private position = 0;
 
+  // 移動平均のステータス
+  private crossStatus: "golden" | "dead" | null = null;
+
   // 移動平均期間の設定（短期10期間、長期50期間）
   private readonly shortTerm = 10;
   private readonly longTerm = 50;
@@ -47,11 +50,11 @@ export class MovingAverageStrategy implements TradingStrategy {
       const amount = await this.calculateAmount(currentPrice);
 
       // ゴールデンクロス（短期MAが長期MAを上抜き）
-      if (shortMA > longMA && currentPrice > shortMA) {
-
+      if (shortMA > longMA && currentPrice > shortMA && this.crossStatus !== "golden") {
+        this.crossStatus = "golden";
         await this.client.createOrder({
           rate: currentPrice,
-          amount: amount,
+          amount: this.AMOUNT,
           order_type: 'buy',
           pair: 'eth_jpy'
         });
@@ -62,16 +65,17 @@ export class MovingAverageStrategy implements TradingStrategy {
         const lastRowNumber = excelAdapter.getLastRowNumber(2, 2); // 2列目の最終行を取得
         // 購入履歴に追加
         await excelAdapter.appendCellValue("B", lastRowNumber + 1, SystemClock.getTimeStamp());
-        await excelAdapter.appendCellValue("C", lastRowNumber + 1, amount);
+        await excelAdapter.appendCellValue("C", lastRowNumber + 1, this.AMOUNT);
         await excelAdapter.appendCellValue("D", lastRowNumber + 1, currentPrice);
         await excelAdapter.appendCellValue("E", lastRowNumber + 1, shortMA);
         await excelAdapter.appendCellValue("F", lastRowNumber + 1, longMA);
       }
       // デッドクロス（短期MAが長期MAを下抜き）
-      else if (shortMA < longMA) {
+      else if (shortMA < longMA && currentPrice < shortMA && this.crossStatus !== "dead") {
+        this.crossStatus = "dead";
         await this.client.createOrder({
           rate: currentPrice,
-          amount: amount,
+          amount: this.AMOUNT,
           order_type: 'sell',
           pair: 'eth_jpy'
         });
@@ -82,7 +86,7 @@ export class MovingAverageStrategy implements TradingStrategy {
         const lastRowNumber = excelAdapter.getLastRowNumber(2, 2); // 2列目の最終行を取得
         // 購入履歴に追加
         await excelAdapter.appendCellValue("B", lastRowNumber + 1, SystemClock.getTimeStamp());
-        await excelAdapter.appendCellValue("C", lastRowNumber + 1, amount);
+        await excelAdapter.appendCellValue("C", lastRowNumber + 1, this.AMOUNT);
         await excelAdapter.appendCellValue("D", lastRowNumber + 1, currentPrice);
         await excelAdapter.appendCellValue("E", lastRowNumber + 1, shortMA);
         await excelAdapter.appendCellValue("F", lastRowNumber + 1, longMA);
