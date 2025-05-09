@@ -1,6 +1,7 @@
 import { BreakoutStrategy } from "../domain/services/coincheck/BreakoutStrategyProcessor";
 import { MovingAverageStrategy } from "../domain/services/coincheck/MovingAverageStrategyProcessor";
 import { PriceRecordProcessor } from "../domain/services/coincheck/PriceRecordProcessor";
+import { RetryTradeStrategy } from "../domain/services/coincheck/RetryTradeProcessor";
 import { RSIStrategy } from "../domain/services/coincheck/RSIStrategyProcessor";
 import { TradingStrategy } from "../domain/services/coincheck/TradingStrategy";
 import { CoinCheckClient } from "../infrastructure/api/CoinCheckClient";
@@ -32,6 +33,7 @@ export class AutoTradeUseCase {
     );
     // 戦略を追加（コメントアウトで有効/無効切り替え）
     this.strategies.push(
+      new RetryTradeStrategy(this.coincheckClient),
       new BreakoutStrategy(this.coincheckClient),
       new MovingAverageStrategy(this.coincheckClient),
       new RSIStrategy(this.coincheckClient)
@@ -58,7 +60,3 @@ export class AutoTradeUseCase {
     }
   }
 }
-
-
-
-

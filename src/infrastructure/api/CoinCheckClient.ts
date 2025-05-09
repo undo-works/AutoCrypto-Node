@@ -2,6 +2,8 @@ import * as crypto from 'crypto';
 import axios, { AxiosRequestConfig, Method } from 'axios';
 import { EthPriceEntity } from './types/EthPriceEntity';
 import { BalanceEntity } from './types/BalanceEntity';
+import { OpenOrdersEntity } from './types/OpenOrdersEntity';
+import { DeleteOpenOrderResponse } from './types/DeleteOpenOrderResponse';
 
 type OrderType = 'buy' | 'sell';
 type OrderParams = {
@@ -106,8 +108,28 @@ export class CoinCheckClient {
   }
 
   // 未約定注文一覧
-  async getOpenOrders(): Promise<any> {
-    return this.request('GET', '/exchange/orders/opens');
+  async getOpenOrders(): Promise<OpenOrdersEntity> {
+    return this.request<OpenOrdersEntity>('GET', '/exchange/orders/opens');
+  }
+
+  /**
+   * 円の残高取得
+   * @returns 残高情報
+   */
+  async getYenBalance(): Promise<number> {
+    const balance = await this.request<BalanceEntity>('GET', '/accounts/balance');
+    // 日本円を返す
+    return Number(balance.jpy)
+  }
+
+  /**
+   * イーサリアムの残高取得
+   * @returns 残高情報
+   */
+  async getEthBalance(): Promise<number> {
+    const balance = await this.request<BalanceEntity>('GET', '/accounts/balance');
+    // イーサリアムの量を返す
+    return Number(balance.eth)
   }
 
   /**
@@ -118,5 +140,14 @@ export class CoinCheckClient {
     const balance = await this.request<BalanceEntity>('GET', '/accounts/balance');
     // 日本円 + ETHの残高×評価額を計算
     return Number(balance.jpy) + (Number(balance.eth) * await this.getEthPrice());
+  }
+
+  /**
+   * 未成約の注文をキャンセル
+   * @param id 注文ID
+   * @returns 
+   */
+  async deleteOpenOrder(id: number): Promise<DeleteOpenOrderResponse> {
+    return this.request<DeleteOpenOrderResponse>('DELETE', `/exchange/orders/${id}`);
   }
 }

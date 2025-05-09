@@ -54,6 +54,33 @@ export class ExcelWorksheetAdapter {
   }
 
   /**
+   * 指定した行A～列のデータを複数取得する
+   * @param startRowNumber
+   * @param endRowNumber
+   * @param columnNumber
+   */
+  getColumnArray(startRowNumber: number, endRowNumber: number, columnNumber: number): number[] {
+    if (!this.worksheet) {
+      throw new Error('Worksheet is not initialized');
+    }
+    // 最終行を取得
+    let dataArray: number[] = [];
+    this.worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber < startRowNumber || rowNumber > endRowNumber) {
+        // 指定行外はスキップ
+        return;
+      }
+      // セルの取得
+      const cell = row.getCell(columnNumber);
+      if (cell.value !== null && cell.value !== undefined && cell.value !== '') {
+        // セルの値を配列に追加
+        dataArray.push(Number(cell.value));
+      }
+    });
+    return dataArray;
+  }
+
+  /**
    * テキストの入力
    * @param columnAlphabet 
    * @param rowNumber 
