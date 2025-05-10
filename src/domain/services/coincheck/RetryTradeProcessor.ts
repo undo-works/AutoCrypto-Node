@@ -32,7 +32,7 @@ export class RetryTradeStrategy implements TradingStrategy {
       await this.client.createOrder({
         rate: currentPrice,
         amount: Number(order.pending_amount),
-        order_type: 'buy',
+        order_type: order.order_type,
         pair: 'eth_jpy'
       });
       console.log(`再トレード実行: ${order.created_at}`);
