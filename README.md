@@ -44,3 +44,10 @@ AWS_SSM_PRIVATE_KEY = "IAMユーザのプライベートキー"
 ```bash
 npm run start
 ```
+
+## PCでの設定
+
+### Windows
+
+Windows Updateで自動で再起動がかかってしまうのを防ぐには
+https://ameblo.jp/ryouto-h/entry-12432601853.html

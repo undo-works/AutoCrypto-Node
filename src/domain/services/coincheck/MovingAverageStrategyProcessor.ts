@@ -12,12 +12,12 @@ export class MovingAverageStrategy implements TradingStrategy {
   private crossStatus: "golden" | "dead" | null = null;
 
   // 移動平均期間の設定（短期10期間、長期50期間）
-  private readonly shortTerm = 10;
-  private readonly longTerm = 50;
+  private readonly shortTerm = 5;
+  private readonly longTerm = 25;
 
   // リスク管理パラメータ
   /** 1トレードの許容リスク */
-  private readonly RISK_PERCENT = 30;
+  private readonly RISK_PERCENT = 50;
   /** ストップロス幅 */
   private readonly STOP_LOSS_PCT = 5;
   private readonly TAKE_PROFIT_PCT = 15; // 利確幅

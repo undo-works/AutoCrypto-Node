@@ -20,22 +20,29 @@ export class RetryTradeStrategy implements TradingStrategy {
       return;
     }
     openOrders.orders.forEach(async (order) => {
-      // まずは注文をキャンセル
-      const deleteResult = await this.client.deleteOpenOrder(order.id);
-      if (deleteResult.success === false) {
-        console.error('オープンオーダーのキャンセルに失敗しました', deleteResult);
-        return;
+      try {
+        // まずは注文をキャンセル
+        const deleteResult = await this.client.deleteOpenOrder(order.id);
+        if (deleteResult.success === false) {
+          console.error('オープンオーダーのキャンセルに失敗しました', deleteResult);
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1秒待機
+        // 現在の価格を取得
+        const currentPrice = await this.client.getEthPrice();
+        // 現在の所持量を取得
+        const amount = await this.client.getEthBalance();
+        // 再トレードを実行
+        await this.client.createOrder({
+          rate: currentPrice,
+          amount: order.order_type === "sell" ? amount : Number(order.pending_amount),
+          order_type: order.order_type,
+          pair: 'eth_jpy'
+        });
+        console.log(`再トレード実行: ${order.created_at}`);
+      } catch (error) {
+        console.log(error)
       }
-      // 現在の価格を取得
-      const currentPrice = await this.client.getEthPrice();
-      // 再トレードを実行
-      await this.client.createOrder({
-        rate: currentPrice,
-        amount: Number(order.pending_amount),
-        order_type: order.order_type,
-        pair: 'eth_jpy'
-      });
-      console.log(`再トレード実行: ${order.created_at}`);
     });
   }
 }
